@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Freeform Universal Dice Roller</title>
+
+  <style>
+    html {
+      box-sizing: border-box;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: inherit;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+      font-size: 18px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+
+      min-height: 100%;
+      color: #fff;
+      background: linear-gradient(rgb(66, 44, 118), rgb(6 8 34));
+    }
+
+    #container {
+      background-image: url('grid.png');
+      background-size: cover;
+      min-height: 100%;
+
+      padding: 2ex;
+
+      font-size: 2.25rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3ex;
+      line-height: 2.2ex;
+      margin: 0;
+      padding-bottom: 1em;
+
+      color: #fff;
+      text-shadow:
+        0 0 10px #ec008c,
+        0 0 40px #ec008c,
+        0 0 80px #ec008c,
+        0 0 90px #ec008c;
+    }
+
+    form {
+      display: flex;
+      gap: 2em;
+      align-items: center;
+      justify-content: space-evenly;
+    }
+
+    label {
+      display: block;
+      padding: 2em 0;
+    }
+
+    input[type="number"] {
+      font-size: inherit;
+      text-align: end;
+      border: 1px solid #ec008c;
+      border-radius: 0.25em;
+      color: inherit;
+      background-color: transparent;
+    }
+
+    button {
+      background: #ec008c;
+      padding: 0.25rem 0.75rem;
+      border: 0 none;
+      border-radius: 0.25em;
+      font-size: inherit;
+      font-weight: bold;
+    }
+
+    hr {
+      border: 1px solid rebeccapurple;
+    }
+
+    @media screen and (max-width: 450px) {
+      h1 {
+        padding-bottom: 0.5em;
+      }
+
+      #container {
+        font-size: 1.8rem;
+      }
+
+      form {
+        flex-direction: column;
+        gap: 0;
+      }
+
+      label {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <h1>Freeform Universal Dice Roller</h1>
+    <form id="roll">
+      <label>
+        Action Dice
+        <input type="number" id="action_dice" min="1" max="20" value="1">
+      </label>
+      <label>
+        Danger Dice
+        <input type="number" id="danger_dice" min="0" max="20" value="0">
+      </label>
+
+      <button type="submit">🎲</button>
+    </form>
+    <hr>
+
+    <div id="dice_result"></div>
+    <div id="result"></div>
+  </div>
+  <script>
+    const actionDiceInput = document.getElementById('action_dice')
+    const dangerDiceInput = document.getElementById('danger_dice')
+    const diceResultOutput = document.getElementById('dice_result')
+    const resultOutput = document.getElementById('result')
+
+    const rollDice = (length) => Array.from({ length }, () => Math.floor((Math.random() * 6) + 1))
+
+    /**
+     * After rolling both dice pools, each danger dice matching
+     * one action dice gets removed from the result.
+     */
+    const getRollResult = (actionDice, dangerDice) => {
+      let tempActionDice = Array.from(actionDice)
+      let tempDangerDice = Array.from(dangerDice)
+      for (n in tempActionDice) {
+        for (m in tempDangerDice) {
+          if (tempActionDice[n] == tempDangerDice[m]) {
+            tempActionDice[n] = 0
+            tempDangerDice[m] = 0
+          }
+        }
+      }
+      return tempActionDice.filter(n => n > 0)
+    }
+
+    document.getElementById('roll').addEventListener('submit', event => {
+      const numberOfActionDice = Number(actionDiceInput.value)
+      const numberOfDangerDice = Number(dangerDiceInput.value)
+
+      const actionDiceRoll = rollDice(numberOfActionDice)
+      const dangerDiceRoll = rollDice(numberOfDangerDice)
+
+      let rollResult = actionDiceRoll
+      if (numberOfDangerDice > 0) {
+        rollResult = getRollResult(actionDiceRoll, dangerDiceRoll)
+      }
+
+      const bestDie = Math.max.apply(null, rollResult);
+      if (bestDie == 6) {
+        const additionalSixesRolled = rollResult.filter(n => n == 6).length - 1
+        result = 'Yes, and...'
+        if (additionalSixesRolled > 0) { result = `${result} With ${additionalSixesRolled} additional boon(s).` }
+      } else if (bestDie == 5) {
+        result = 'Yes...'
+      } else if (bestDie == 4) {
+        result = 'Yes, but...'
+      }
+	else if (bestDie == 3) {
+        result = 'No, but...'
+      }
+	else if (bestDie == 2) {
+        result = 'No...' 
+      }
+	else if (bestDie == 1) {
+        result = 'No, and...'
+      } 
+	else if (bestDie < 1) {
+        result = 'Botch!'
+      } 
+      diceResultOutput.innerHTML = actionDiceRoll.toString()
+      if (numberOfDangerDice > 0) {
+        diceResultOutput.innerHTML += ` vs. ${dangerDiceRoll.toString()}`
+      }
+      resultOutput.innerHTML = result.toString()
+      event.preventDefault()
+    });
+  </script>
+</body>
+
+</html>
